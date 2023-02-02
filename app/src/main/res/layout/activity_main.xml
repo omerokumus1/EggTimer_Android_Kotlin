@@ -137,7 +137,7 @@
         style="?android:attr/progressBarStyleHorizontal"
         android:max="100"
         android:progress="50"
-        android:progressTint="#200116"
+        android:progressTint="#4C0827"
         />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
