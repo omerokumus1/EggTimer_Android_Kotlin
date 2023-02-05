@@ -1,11 +1,13 @@
 package com.example.eggtimer
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.example.eggtimer.databinding.ActivityMainBinding
 import java.util.*
-import kotlin.concurrent.*
+import kotlin.concurrent.timerTask
 
 class MainActivity : AppCompatActivity() {
     private var binding: ActivityMainBinding? = null
@@ -13,6 +15,7 @@ class MainActivity : AppCompatActivity() {
     private var chunk: Int? = null
     private var timer: Timer = Timer()
     private var timerTask: TimerTask? = null
+    private var uiHandler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,6 +79,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setTimer() {
         clearTimer()
+        resetPrompText()
         val delay = 1000L
         val period = 1000L
         setProgressBarToZero()
@@ -116,7 +120,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setPromptText() {
-        runOnUiThread {
+        uiHandler.post {
             binding?.let {
                 it.promptText.text = "Your egg is ready. Enjoy!"
             }
@@ -126,7 +130,7 @@ class MainActivity : AppCompatActivity() {
     private fun resetViews() {
         timer.schedule(
             timerTask {
-                runOnUiThread {
+                uiHandler.post {
                     resetPrompText()
                     resetProgressBar()
                 }
