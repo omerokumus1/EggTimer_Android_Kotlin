@@ -3,4 +3,6 @@
 # Objectives
   - Timer
   - runOnUiThread
+  - Handler
+  - View post function
   - Horizontal Progress Bar
