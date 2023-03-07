@@ -2,10 +2,11 @@ package com.example.eggtimer
 
 import android.os.Bundle
 import android.util.Log
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.example.eggtimer.databinding.ActivityMainBinding
 import java.util.*
-import kotlin.concurrent.*
+import kotlin.concurrent.timerTask
 
 class MainActivity : AppCompatActivity() {
     private var binding: ActivityMainBinding? = null
@@ -13,11 +14,14 @@ class MainActivity : AppCompatActivity() {
     private var chunk: Int? = null
     private var timer: Timer = Timer()
     private var timerTask: TimerTask? = null
+    private var activityState = ActivityState.UNCREATED
+    private var currentProgress: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding?.root)
+        activityState = ActivityState.CREATED
         setClickListeners()
     }
 
@@ -87,7 +91,16 @@ class MainActivity : AppCompatActivity() {
         Log.i("timerTask", timerTask?.scheduledExecutionTime()?.toString() ?: "")
         binding?.progressbar?.let {
             if (it.progress < it.max) {
-                incrementProgressBar()
+                if (activityState in listOf(
+                        ActivityState.PAUSED,
+                        ActivityState.STOPPED,
+                        ActivityState.DESTROYED_TEMPORARILY
+                    )
+                ) {
+                    currentProgress += chunk ?: 1
+                } else {
+                    incrementProgressBar()
+                }
             }
         }
     }
@@ -96,6 +109,7 @@ class MainActivity : AppCompatActivity() {
         binding?.let {
             if (it.progressbar.progress < it.progressbar.max) {
                 it.progressbar.progress += chunk ?: 1
+                currentProgress = it.progressbar.progress
             }
             checkIfFinished()
         }
@@ -112,7 +126,17 @@ class MainActivity : AppCompatActivity() {
     private fun timesUp() {
         clearTimer()
         setPromptText()
+        popAlertDialog()
         resetViews()
+    }
+
+    private fun popAlertDialog() {
+        val adBuilder = AlertDialog.Builder(this)
+        adBuilder.setMessage("Egg is Ready!")
+        adBuilder.setNeutralButton(
+            "OK"
+        ) { _, _ -> finish() }
+        adBuilder.create().show()
     }
 
     private fun setPromptText() {
@@ -150,9 +174,49 @@ class MainActivity : AppCompatActivity() {
         binding?.progressbar?.progress = 0
     }
 
+    override fun onStart() {
+        super.onStart()
+        activityState = ActivityState.STARTED
+    }
+
+    override fun onResume() {
+        super.onResume()
+        activityState = ActivityState.RESUMED
+        // Restore progress
+        binding?.progressbar?.progress = currentProgress
+    }
+
+    override fun onPause() {
+        super.onPause()
+        activityState = ActivityState.PAUSED
+    }
+
+    override fun onStop() {
+        super.onStop()
+        activityState = ActivityState.STOPPED
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (!isFinishing) {
+            activityState = ActivityState.DESTROYED_TEMPORARILY
+        }
+    }
+
     enum class EggType {
         SOFT,
         MEDIUM,
         HARD
+    }
+
+    enum class ActivityState {
+        UNCREATED,
+        CREATED,
+        STARTED,
+        RESUMED,
+        PAUSED,
+        STOPPED,
+        DESTROYED_TEMPORARILY,
+
     }
 }
